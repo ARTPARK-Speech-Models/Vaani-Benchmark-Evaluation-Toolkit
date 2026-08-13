@@ -1,0 +1,7 @@
+python-dotenv
+pyyaml
+jiwer
+transformers
+datasets
+torch
+huggingface_hub
