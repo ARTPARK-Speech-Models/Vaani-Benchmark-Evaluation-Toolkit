@@ -41,6 +41,7 @@ from jiwer import process_words
 load_dotenv()
 
 DATASET_REPO = 'ARTPARK-IISc/Vaani-Benchmark-V1.0'
+DATASET_CONFIG = 'Hindi'
 AUDIO_COLUMN = 'audio'
 REFERENCE_COLUMNS = {'v1': 'transcription_v1', 'v2': 'transcription_v2', 'v3': 'transcription_v3'}
 
@@ -111,7 +112,7 @@ def run_inference(args) -> tuple[dict[str, list[str]], list[str]]:
     token = os.environ.get('HF_TOKEN')
 
     print(f"Loading dataset: {args.dataset} split={args.split}")
-    ds = load_dataset(args.dataset, split=args.split, token=token)
+    ds = load_dataset(args.dataset, DATASET_CONFIG, split=args.split, token=token)
 
     print(f"Loading model: {args.model}")
     asr = pipeline(
@@ -140,7 +141,7 @@ def run_score_only(predictions_file: str, args) -> tuple[dict[str, list[str]], l
 
     token = os.environ.get('HF_TOKEN')
 
-    ds = load_dataset(args.dataset, split=args.split, token=token)
+    ds = load_dataset(args.dataset, DATASET_CONFIG, split=args.split, token=token)
     references = {key: ds[col] for key, col in REFERENCE_COLUMNS.items()}
 
     with open(predictions_file) as f:
