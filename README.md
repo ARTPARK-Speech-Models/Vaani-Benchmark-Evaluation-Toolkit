@@ -2,9 +2,11 @@
 
 Evaluate an ASR (speech-to-text) model against
 [`ARTPARK-IISc/Vaani-Benchmark-V1.0`](https://huggingface.co/datasets/ARTPARK-IISc/Vaani-Benchmark-V1.0)
-— 5,343 Hindi speech segments from 1,103 speakers across 104 Indian
-districts, each with 3 independent human transcriptions — and publish the
-score to the model's HF card via the standard
+— 14,848 speech segments in 14 languages (one dataset config per language:
+Hindi, Telugu, Malayalam, Mizo, Nepali, Khortha, Bengali, Assamese,
+Chhattisgarhi, Gujarati, Manipuri, Nyishi, Tamil, English), each with 3
+independent human transcriptions — and publish the score to the model's HF
+card via the standard
 [HF eval-results](https://huggingface.co/docs/hub/main/en/eval-results)
 mechanism.
 
@@ -51,7 +53,7 @@ below.
 
 Not included — every ASR model has a different loading/inference API.
 Load `datasets.load_dataset("ARTPARK-IISc/Vaani-Benchmark-V1.0",
-split="test")`, run your model over the `audio` column, and write
+"Hindi", split="test")` (or another language's config), run your model over the `audio` column, and write
 `predictions.json` in one of two shapes (`run_eval.py` and
 `transliterate_predictions.py` auto-detect which one you gave them):
 
@@ -68,7 +70,7 @@ split="test")`, run your model over the `audio` column, and write
   above.
 
 `predictions.example.json` is a 5-entry shape demo, not runnable as-is
-— a real file has one entry per row in the test split (5,050 of them).
+— a real file has one entry per row in the test split (5,050 for Hindi).
 
 `run_eval.py --mode inference` does this automatically for models that
 load through a generic `transformers.pipeline('automatic-speech-recognition', ...)`
