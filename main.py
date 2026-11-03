@@ -12,12 +12,14 @@ transformers.pipeline), just call run_eval.py directly — it's already a
 single command and produces no intermediate predictions.json to
 transliterate.
 
-Transliteration (Latin -> Devanagari code-switch normalization) runs by
-default; pass --no-transliterate to skip it.
+Transliteration (Latin -> native-script code-switch normalization) runs by
+default; pass --no-transliterate to skip it. --language picks the dataset
+config (default Hindi) for every step.
 
 Usage:
     .venv/bin/python main.py --model org/model-name --predictions predictions.json
     .venv/bin/python main.py --model org/model-name --predictions predictions.json --publish
+    .venv/bin/python main.py --model org/model-name --predictions predictions.json --language Telugu
     .venv/bin/python main.py --model org/model-name --predictions predictions.json --no-transliterate --publish --dry-run
 """
 
@@ -41,23 +43,25 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--model', required=True, help='HF model repo id')
     parser.add_argument('--predictions', required=True, help='predictions.json to score')
+    parser.add_argument('--language', default='Hindi', help='Dataset config to evaluate on (default: Hindi)')
     parser.add_argument('--no-transliterate', dest='transliterate', action='store_false',
                         help='Skip Latin-script normalization before scoring (on by default)')
     parser.add_argument('--publish', action='store_true',
-                        help='Push the resulting Hindi_WER to the model repo on HF')
+                        help='Push the resulting <Language>_WER to the model repo on HF')
     parser.add_argument('--dry-run', action='store_true', help='With --publish, preview without writing')
     parser.add_argument('--output', default='eval_results.json')
     parser.set_defaults(transliterate=True)
     args = parser.parse_args()
 
     if args.transliterate:
-        run(['transliterate_predictions.py', args.predictions])
+        run(['transliterate_predictions.py', args.predictions, '--language', args.language])
 
     run(['run_eval.py', '--model', args.model, '--mode', 'score',
-         '--predictions', args.predictions, '--output', args.output])
+         '--predictions', args.predictions, '--language', args.language, '--output', args.output])
 
     if args.publish:
-        cmd = ['push_eval_results.py', '--model', args.model, '--results', args.output]
+        cmd = ['push_eval_results.py', '--model', args.model, '--results', args.output,
+               '--tasks', f'{args.language.capitalize()}_WER']
         if args.dry_run:
             cmd.append('--dry-run')
         run(cmd)

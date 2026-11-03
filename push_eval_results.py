@@ -24,7 +24,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATASET_REPO = 'ARTPARK-IISc/Vaani-Benchmark-V1.0'
-ALL_TASKS = ['Hindi_WER']
 
 
 def slug(text: str) -> str:
@@ -80,15 +79,17 @@ def main():
     parser.add_argument('--model',   required=True, help='HF model repo id to publish results to')
     parser.add_argument('--dataset', default=DATASET_REPO)
     parser.add_argument('--results', default='eval_results.json')
-    parser.add_argument('--tasks',   nargs='+', default=ALL_TASKS,
-                        help='Task IDs to push (must match the dataset\'s published eval-results task ids)')
+    parser.add_argument('--tasks',   nargs='+', default=None,
+                        help='Task IDs to push (must match the dataset\'s published eval-results task ids; '
+                             'default: every <Language>_WER in the results file)')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 
     with open(args.results) as f:
         results = json.load(f)
 
-    entries = build_entries(results, args.dataset, args.tasks)
+    tasks = args.tasks or [k for k in results if k.endswith('_WER')]
+    entries = build_entries(results, args.dataset, tasks)
     if not entries:
         print('ERROR: no valid metric entries to push', file=sys.stderr)
         sys.exit(1)

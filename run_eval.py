@@ -24,9 +24,13 @@ how the reference transcriptions were authored.
 (with or without the .wav extension) — matched by id instead of row order,
 robust to split/revision reordering. Missing ids score as empty string.
 
+--language picks the dataset config (default Hindi); the score is written as
+<Language>_WER, the task id the dataset's eval.yaml declares for that config.
+
 Usage:
     .venv/bin/python run_eval.py --model org/model-name --mode inference
     .venv/bin/python run_eval.py --model org/model-name --mode score --predictions my_preds.json
+    .venv/bin/python run_eval.py --model org/model-name --mode score --predictions my_preds.json --language Telugu
 """
 
 import argparse
@@ -41,7 +45,8 @@ from jiwer import process_words
 load_dotenv()
 
 DATASET_REPO = 'ARTPARK-IISc/Vaani-Benchmark-V1.0'
-DATASET_CONFIG = 'Hindi'
+LANGUAGES = ['Hindi', 'Telugu', 'Malayalam', 'Mizo', 'Nepali', 'Khortha', 'Bengali', 'Assamese',
+             'Chhattisgarhi', 'Gujarati', 'Manipuri', 'Nyishi', 'Tamil', 'English']
 AUDIO_COLUMN = 'audio'
 REFERENCE_COLUMNS = {'v1': 'transcription_v1', 'v2': 'transcription_v2', 'v3': 'transcription_v3'}
 
@@ -111,8 +116,8 @@ def run_inference(args) -> tuple[dict[str, list[str]], list[str]]:
 
     token = os.environ.get('HF_TOKEN')
 
-    print(f"Loading dataset: {args.dataset} split={args.split}")
-    ds = load_dataset(args.dataset, DATASET_CONFIG, split=args.split, token=token)
+    print(f"Loading dataset: {args.dataset} config={args.language} split={args.split}")
+    ds = load_dataset(args.dataset, args.language, split=args.split, token=token)
 
     print(f"Loading model: {args.model}")
     asr = pipeline(
@@ -141,7 +146,7 @@ def run_score_only(predictions_file: str, args) -> tuple[dict[str, list[str]], l
 
     token = os.environ.get('HF_TOKEN')
 
-    ds = load_dataset(args.dataset, DATASET_CONFIG, split=args.split, token=token)
+    ds = load_dataset(args.dataset, args.language, split=args.split, token=token)
     references = {key: ds[col] for key, col in REFERENCE_COLUMNS.items()}
 
     with open(predictions_file) as f:
@@ -179,6 +184,8 @@ def main():
     parser.add_argument('--model', required=True, help='HF model repo id to evaluate')
     parser.add_argument('--dataset', default=DATASET_REPO)
     parser.add_argument('--split', default='test')
+    parser.add_argument('--language', default='Hindi', type=str.capitalize, choices=LANGUAGES,
+                        help='Dataset config to evaluate on (default: Hindi)')
     parser.add_argument('--revision', default='main')
     parser.add_argument('--device', default='cpu', help='"cpu" or "cuda" (--mode inference only)')
     parser.add_argument('--batch-size', type=int, default=8, help='--mode inference only')
@@ -205,14 +212,16 @@ def main():
 
     wer = approach3_wer(refs1, refs2, refs3, hyps)
 
+    task_id = f'{args.language}_WER'
     output = {
         'model':     args.model,
         'dataset':   args.dataset,
+        'language':  args.language,
         'split':     args.split,
         'n_samples': len(predictions),
-        'Hindi_WER': round(wer * 100, 1),
+        task_id:     round(wer * 100, 1),
     }
-    print(f"\nHindi_WER: {output['Hindi_WER']}")
+    print(f"\n{task_id}: {output[task_id]}")
 
     if args.save_predictions:
         output['predictions'] = predictions

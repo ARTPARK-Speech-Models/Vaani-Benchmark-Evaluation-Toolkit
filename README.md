@@ -26,6 +26,12 @@ script — see [1. Get predictions](#1-get-predictions))?
 # --dry-run previews the publish step without writing anything
 ```
 
+Every script defaults to the Hindi config. For any other language, pass the
+dataset config name with `--language` (`main.py`, `run_eval.py` and
+`transliterate_predictions.py` all take it): Telugu, Malayalam, Mizo, Nepali,
+Khortha, Bengali, Assamese, Chhattisgarhi, Gujarati, Manipuri, Nyishi, Tamil
+or English. The score is reported and published as `<Language>_WER`.
+
 **No predictions.json yet, and your model loads through a plain
 `transformers.pipeline` call?** `run_eval.py --mode inference` runs
 inference and scoring together — no separate transliteration step, since
@@ -96,6 +102,23 @@ the normalization partially subjective rather than purely corpus-derived.
 Evaluating against a different corpus? Regenerate the lookup from that
 corpus's own annotations rather than reusing this one blindly.
 
+**Other languages.** The dataset's other configs have their own tables in
+`lookups/`, mined the same way from each language's references; pass the
+config name:
+
+```bash
+.venv/bin/python transliterate_predictions.py predictions.json --language telugu
+```
+
+Tables exist for Assamese, Bengali, Chhattisgarhi, Gujarati, Khortha,
+Malayalam, Manipuri (Meetei Mayek), Nepali, Tamil and Telugu. Mizo, Nyishi
+and English are written in Latin script, so there is nothing to
+transliterate and the file is left unchanged. For Bengali, Khortha,
+Malayalam, Nepali and Telugu, `lookups/vaani_<language>_lookup_extra.json`
+adds a few common loanwords (e.g. `atm`, `upi`) that model outputs contain
+but the references never do, with rule-based spellings — the one exception
+to "corpus-derived only"; a spelling mined from the references always wins.
+
 If a model's output is **100% Latin script** even after this pass, that's a
 sign it isn't actually attempting Hindi transcription (translating instead
 of transcribing, or defaulting to English) — worth excluding from
@@ -124,7 +147,8 @@ reference shouldn't be able to tank (or inflate) a model's score:
 4. `Hindi_WER = (substitutions + insertions + deletions) / total_ref_len`,
    summed across the whole split.
 
-Writes `eval_results.json` with the `Hindi_WER` field.
+Writes `eval_results.json` with the `Hindi_WER` field (`<Language>_WER`
+with `--language`; the method is the same for every language).
 
 ### 4. Publish
 
