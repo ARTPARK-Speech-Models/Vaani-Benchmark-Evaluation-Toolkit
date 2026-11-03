@@ -53,12 +53,14 @@ REFERENCE_COLUMNS = {'v1': 'transcription_v1', 'v2': 'transcription_v2', 'v3': '
 
 def clean_text(text: str) -> str:
     """Strip bracketed glosses/annotations and punctuation, matching how
-    Vaani's reference transcriptions are authored (e.g. 'टाइम {time}' -> 'टाइम')."""
+    Vaani's reference transcriptions are authored (e.g. 'टाइम {time}' -> 'टाइम').
+    Text left empty becomes the placeholder 'NA', as in the benchmark's own scorer,
+    so an empty prediction counts as one error instead of none."""
     text = text or ''
     text = re.sub(r'\(.*?\)|\[.*?\]|\{.*?\}|<.*?>|❴.*?❵', '', text)
     text = re.sub(r'[,?.!;:"%\'‘’“”—–\-।]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
-    return text
+    return text or 'NA'
 
 
 def approach3_wer(refs1: list[str], refs2: list[str], refs3: list[str], hyps: list[str]) -> float:
